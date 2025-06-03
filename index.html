@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Russian Doll Aging</title>
+  <link rel="stylesheet" href="https://use.typekit.net/kyh1kdb.css">
+  <style>
+  
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+      font-family: sans-serif;
+    }
+  
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+    }
+  
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+  
+    #startBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      padding: 20px 40px;
+      font-size: 28px;
+      background: transparent;
+      color: #9c4959;
+      border: none;
+      border-radius: 10px;
+      font-family: "altesse-std-24pt", sans-serif;
+font-weight: 400;
+font-style: normal;
+font-size: 100px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+  
+    #startBtn:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+      text-shadow: 0 0 5px rgb(228, 156, 168),
+               0 0 10px hotpink,
+               0 0 20px #9c4959;
+  color: white;
+
+    }
+  
+    #caption {
+      position: absolute;
+      bottom: 40px;
+      left: 34%;
+      color: #9c4959;
+      font-size: 18px;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 1s ease-in;
+      font-family: 'Courier New', Courier, monospace;
+      font-size:20px;
+    }
+
+    .vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 192, 203, 0) 40%,     /* transparent center */
+    rgba(255, 105, 180, 0.3) 100%   /* pink outer edge */
+  );
+}
+
+.prompt {
+    bottom: 20px;
+    font-family: 'Courier New', Courier, monospace;
+    color: #9c4959;
+    font-size: 10px;
+}
+
+  </style>
+  
+</head>
+<body>
+    <div class="vignette"></div>
+
+  <button id="startBtn">Click to Age</button>
+  <video id="bgVideo" loop muted autoplay playsinline></video>
+  <canvas id="flowerCanvas"></canvas>
+  <div id="caption">aging is not decay — it’s a cycle of <span style="font-style: italic;"> becoming.</span> </div>
+  <div id="prompt"> click to add flowers! </div>
+
+  <script>
+    const canvas = document.getElementById("flowerCanvas");
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+
+    const video = document.getElementById("bgVideo");
+    const startBtn = document.getElementById("startBtn");
+
+    const budImg = new Image();
+    const bloomImg = new Image();
+    const wiltImg = new Image();
+    const rotImg = new Image();
+    budImg.src = "bud.png";
+    bloomImg.src = "bloom.png";
+    wiltImg.src = "wilt.png";
+    rotImg.src = "rot.png";
+
+    let started = false;
+    const flowers = [];
+    let mouseX = 0, mouseY = 0;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // Preload and pause video to show still frame
+    video.src = "Sequence01.mp4";
+    video.load();
+    video.addEventListener("loadeddata", () => {
+      video.pause(); // still frame before click
+    });
+
+    startBtn.addEventListener("click", () => {
+      started = true;
+      startBtn.style.display = "none";
+      video.play();
+      document.getElementById("caption").style.opacity = 1;
+
+    });
+
+    canvas.addEventListener("click", (e) => {
+      if (!started) return;
+      flowers.push({
+        x: e.clientX,
+        y: e.clientY,
+        createdAt: Date.now()
+      });
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const now = Date.now();
+
+      for (let i = flowers.length - 1; i >= 0; i--) {
+        const flower = flowers[i];
+        const age = now - flower.createdAt;
+        let img;
+
+        if (age < 15000) img = budImg;
+        else if (age < 30000) img = bloomImg;
+        else if (age < 45000) img = wiltImg;
+        else if (age < 60000) img = rotImg;
+        else {
+          flowers.splice(i, 1);
+          continue;
+        }
+
+        ctx.drawImage(img, flower.x - 30, flower.y - 30, 60, 60);
+      }
+
+      // Bloom image as custom cursor
+      if (started && bloomImg.complete) {
+        ctx.drawImage(bloomImg, mouseX - 20, mouseY - 20, 40, 40);
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</body>
+</html>
+
